@@ -17,7 +17,7 @@ MUSE has some key properties which are distinguishable from other key-value stor
 
 ### How to compile?
 
-MUSE uses <thread> and <mutex> library in C++11. Therefore, it must be complied and used where such library's are available.
+MUSE uses thread and mutex library in C++11. Therefore, it must be complied and used where such library's are available.
 Until now, MUSE works best on Linux and OSX.(On OSX, there can be some warning message when you compile, but you can ignore)
 
 To begin, first you clone the repository and compile using:
