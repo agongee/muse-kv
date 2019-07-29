@@ -41,7 +41,7 @@ To give authority level, you can give level as last argument:
 
     $ ./muse-client [IP ADDRESS] [PORT NUMBER] [AUTHORITY LEVEL]
     
-To make cluster, first, you must run the servers to include in server. For instance, if you want to make a cluster of 3 server nodes, you need to run 3 servers to make cluster first. After you run the server, you can run muse-cluster with configuration text file:
+To build cluster, first, you must run the servers to include in server. For instance, if you want to make a cluster of 3 server nodes, you need to run 3 servers to make cluster first. After you run the server, you can run muse-cluster with configuration text file:
 
     $ ./muse-cluster [CONFIGURATION TXT]
 
@@ -59,6 +59,27 @@ For example, if you want to make a cluster with 3 server nodes:
     127.0.0.1 5004
     127.0.0.1 5007
 
+Building replication is similar to building cluster. You must run the servers to make replication of each others, and then you run muse-replica with configuration text file.
 
 
+    $ ./muse-replica [CONFIGURATION TXT]
+
+Like cluster, configuration text file should be written in given forms:
+
+    replicanumber [CLUSTER NUMBER]
+    replica [IP ADDRESS 1] [PORT NUMBER 1]
+    replica [IP ADDRESS 2] [PORT NUMBER 3]
+    ...
+
+For example, if you want to make a replication with 3 server nodes:
+
+    replicanumber 3
+    replica 127.0.0.1 5001
+    replica 127.0.0.1 5002
+    replica 127.0.0.1 5003
+
+In order to make a distributed system with both cluster and replication, you must build replication first and then cluster:
+
+    $ ./muse-replica [CONFIGURATION TXT]
+    $ ./muse-cluster [CONFIGURATION TXT]
 
