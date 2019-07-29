@@ -3,7 +3,7 @@ MUSE: MUltithreading SEcure In-Memory Key-Value Store
 
 ### What is MUSE?
 
-![logo](readme_src/LOGO_MUSE1.png "MUSE")
+![logo](readme_src/LOGO_MUSE1.png "MUSE"){:.aligncenter}
 
 MUSE[múse] is a in-memory key-value store system. MUSE can be referred as a key-value server system. MUSE stores, updates and retrieve data via a set of commands which are sent on a server-client model with TCP socket. 
 
