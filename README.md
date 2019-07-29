@@ -15,8 +15,49 @@ MUSE has some key properties which are distinguishable from other key-value stor
 * MUSE can offer different level of authority to each client and each key. If the authority condition of clients and requested key doesn't match the condition, MUSE blocks the access of the key. By differentiating the authority level, user can handle the database far easier especially for the system which includes large number of clients.
 * MUSE is server for distributed system. It supports cluster and replication methods. Cluster provides a way to automatically share across multiple MUSE server. Replication of each server nodes help to handle when one of the node fail-over.
 
-### How to install and use?
+### How to compile?
 
+MUSE uses <thread> and <mutex> library in C++11. Therefore, it must be complied and used where such library's are available.
+Until now, MUSE works best on Linux and OSX.(On OSX, there can be some warning message when you compile, but you can ignore)
+
+To begin, first you clone the repository and compile using:
+
+    $ bash compile.sh
+
+When you compile, 5 objects will be created: muse-server, muse-client, muse-cluster, muse-replica, muse-restore.
+
+### How to run?
+
+To run the server, you can just simply type:
+
+    $ ./muse-server [PORT NUMBER]
+
+For the client, there are two options you can choose. In the most simple way, you can just:
+
+    $ ./muse-client [IP ADDRESS] [PORT NUMBER]
+
+In this way, simple MUSE clients will be open and connected to the MUSE server which matches with the argument(IP adddress and port number). In this case, authority level is 0 which is the lowest level.
+To give authority level, you can give level as last argument:
+
+    $ ./muse-client [IP ADDRESS] [PORT NUMBER] [AUTHORITY LEVEL]
+    
+To make cluster, first, you must run the servers to include in server. For instance, if you want to make a cluster of 3 server nodes, you need to run 3 servers to make cluster first. After you run the server, you can run muse-cluster with configuration text file:
+
+    $ ./muse-cluster [CONFIGURATION TXT]
+
+Configuration text file should be written in given forms:
+
+    cluster [CLUSTER NUMBER]
+    [IP ADDRESS 1] [PORT NUMBER 1]
+    [IP ADDRESS 2] [PORT NUMBER 3]
+    ...
+
+For example, if you want to make a cluster with 3 server nodes:
+
+    cluster 3
+    127.0.0.1 5001
+    127.0.0.1 5004
+    127.0.0.1 5007
 
 
 
