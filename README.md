@@ -6,7 +6,7 @@ MUSE: MUltithreading SEcure In-Memory Key-Value Store
 ![logo](readme_src/MUSE_LOGO.png "MUSE")
 
 MUSE[múse] is a in-memory key-value store system. MUSE works as a server system with database. MUSE stores, updates and retrieve data via a set of commands which are sent on a server-client model with TCP socket. 
-
+(By the way, the logo stands for aengMUSE(=parrot in korean) and shields(to demonstrate that it is very secure!)
 MUSE has some key properties which are distinguishable from other key-value store system.
 
 * MUSE provides multithreading. Server can serve multiple commands from multiple clients simultaneously by multithreading. This makes MUSE faster when there are many clients attached to the server.
