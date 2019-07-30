@@ -16,6 +16,10 @@ MUSE has some key properties which are distinguishable from other key-value stor
 * MUSE can offer different level of authority to each client and each key. If the authority condition of clients and requested key doesn't match the condition, MUSE blocks the access of the key. By differentiating the authority level, user can handle the database far easier especially for the system which includes large number of clients.
 * MUSE is server for distributed system. It supports cluster and replication methods. Cluster provides a way to automatically share across multiple MUSE server. Replication of each server nodes help to handle when one of the node fail-over.
 
+### Overall Architecture
+
+
+
 ### How to compile?
 
 MUSE uses thread and mutex library in C++11. Therefore, it must be complied and used where such library's are available.
@@ -84,3 +88,6 @@ In order to make a distributed system with both cluster and replication, you mus
     $ ./muse-replica [CONFIGURATION TXT]
     $ ./muse-cluster [CONFIGURATION TXT]
 
+### D2 CAMPUS FEST mini
+
+MUSE is for 2019 D2 CAMPUS FEST mini. We're participating in development of 'Distribute in-memory key-value store(topic 2)'. We hope this project not only achieve good results on the FEST, but also helps many developer who needs key-value store system.
