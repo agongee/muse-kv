@@ -1,3 +1,32 @@
+/*
+MIT License
+
+Copyright (c) 2019 Taehun Kang(agongee123@gmail.com), Jaewoo Pyo(jwpyo98@gmail.com) and Bogyeong Park(parkbo0201@gmail.com)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+/*
+This is cpp file for recovering server with commnads log.
+*/
+
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -18,6 +47,7 @@
 #include "hash.h"
 #include "command.h"
 #include "linkedlist.h"
+#include "encrypt.h"
 
 #define BUF_LEN 1024
 
@@ -36,14 +66,14 @@ int get_replica_info(int s, char* buf){
     int arg_num;
 
     if(send(s, is_client.data(), is_client.size(), 0) <= 0){
-        std::cerr << "Error: Can't send initial message" << std::endl;
+        std::cerr << "ERROR : CAN'T SEND INITIAL MESSAGE" << std::endl;
         std::cout << strerror(errno) << std::endl;
         return 0;
     }
 
     memset(buf, 0, BUF_LEN);
     if(recv(s, buf, 1024, 0) <= 0){
-        std::cerr << "Error: Can't send initial message" << std::endl;
+        std::cerr << "ERROR : CAN'T RECV INITIAL MESSAGE" << std::endl;
         std::cout << strerror(errno) << std::endl;
         return 0;
     }
@@ -60,14 +90,14 @@ int get_replica_info(int s, char* buf){
         tmpst = give + std::to_string(i);
         std::cout << tmpst << std::endl;
         if(send(s, tmpst.data(), tmpst.size(), 0) <= 0){
-            std::cerr << "Error: Can't send initial message" << std::endl;
+            std::cerr << "ERROR : CAN'T SEND REPLICA INFO" << std::endl;
             std::cout << strerror(errno) << std::endl;
             return 0;
         }
 
         memset(buf, 0, BUF_LEN);
         if(recv(s, buf, 1024, 0) <= 0){
-            std::cerr << "Error: Can't recv replica info " << std::endl;
+            std::cerr << "Error: Can't RECV REPLY" << std::endl;
             std::cout << strerror(errno) << std::endl;
             return 0;
         }
@@ -82,27 +112,11 @@ int get_replica_info(int s, char* buf){
         replica_ip[i] = arguments[1];
         replica_port[i] = atoi(arguments[2].c_str());
 
-        std::cout << "ip is " << replica_ip[i] << ", port is " << replica_port[i] << std::endl;
+        std::cout << "IP is " << replica_ip[i] << ", PORT is " << replica_port[i] << std::endl;
         std::cout << "////////////////////////////////////////" << std::endl;
     }
 
-
-    if(send(s, is_client.data(), is_client.size(), 0) <= 0){
-        std::cerr << "Error: Can't send initial message" << std::endl;
-        std::cout << strerror(errno) << std::endl;
-        return 0;
-    }
-
-    memset(buf, 0, BUF_LEN);
-    if(recv(s, buf, 1024, 0) <= 0){
-        std::cerr << "Error: Can't send initial message" << std::endl;
-        std::cout << strerror(errno) << std::endl;
-        return 0;
-    }
-
-    temp = buf;
-
-    std::cout << temp << std::endl;
+    return 1;
 }
 
 int task_client(int s, char* buf, char* txt_name){
@@ -110,7 +124,7 @@ int task_client(int s, char* buf, char* txt_name){
     ssize_t n;
 
     std::string lr;
-    std::ifstream in(txt_name);
+    std::ifstream in (txt_name);
 
     struct timeval st, et;
     int elapsed;
@@ -118,30 +132,27 @@ int task_client(int s, char* buf, char* txt_name){
     gettimeofday(&st, NULL);
 
     while(getline(in, lr)){
-        lr += "\0";
-
-        if(send(s, lr.data(), lr.size(), 0) <= 0){
-            std::cerr << "Error Sending" << std::endl;
+        com = lr;
+        // If you have encrypted string use below 
+        //com = encrypt_::decrypt_string(1021*1453, 28969, lr);
+        if(send(s, com.data(), com.size(), 0) <= 0){
+            std::cerr << "ERROR : CLIENT SEND FAIL" << std::endl;
             std::cerr << strerror(errno) << std::endl;
         }
-
-        std::cout << lr << std::endl;
 
         memset(buf, 0, sizeof(buf));
         if(recv(s, buf, 1024, 0) <= 0){
-            std::cerr << "Error Recving" << std::endl;
+            std::cerr << "ERROR : CLIENT RECV FAIL" << std::endl;
             std::cerr << strerror(errno) << std::endl;
         }
 
-        std::cout << "received: " << buf << std::endl;
+        std::cout << "Received: " << buf << std::endl;
 
     }
 
     gettimeofday(&et, NULL);
-
     elapsed = ((et.tv_sec - st.tv_sec) * 1000000 + (et.tv_usec - st.tv_usec));
-
-    std::cout << "elapsed time is " << elapsed << std::endl;
+    std::cout << "Elapsed time is " << elapsed << std::endl;
 
     return 1;
 }
@@ -152,7 +163,7 @@ int main(int argc, char ** argv){
     char buf [BUF_LEN];
 
     if(argc != 5){
-        std::cerr << "Usage: " << argv[0] << " IPAddress PortNumber Authority TextFile" << std::endl;
+        std::cerr << "usage: " << argv[0] << " [ip address] [port number] [authority level] [text file]" << std::endl;
         exit(1);
     }
 
@@ -161,7 +172,7 @@ int main(int argc, char ** argv){
     }
 
     if((s = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-        std::cerr << "Error: Can't create socket" << std::endl;
+        std::cerr << "ERROR : CAN'T OPEN STREAM SOCKET!" << std::endl;
         exit(1);
     }
 
@@ -174,14 +185,13 @@ int main(int argc, char ** argv){
     std::cout << "try..." << std::endl;
 
     if(connect(s, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1){
-        std::cerr << "Error: Can't connect to " << server_addr.sin_addr.s_addr << ":" << server_addr.sin_port << std::endl;
+        std::cerr << "ERROR : CAN'T CONNECT!" << std::endl;
         std::cout << strerror(errno) << std::endl;
         exit(2);
     }
 
     get_replica_info(s, (char*)buf);
 
-    n = 1;
     task_client(s, (char*)buf, argv[4]);
 
     close(s);
