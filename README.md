@@ -18,10 +18,6 @@ MUSE has some key properties which are distinguishable from other key-value stor
 * MUSE can offer different level of authority to each client and each key. If the authority condition of clients and requested key doesn't match the condition, MUSE blocks the access of the key. By differentiating the authority level, user can handle the database far easier especially for the system which includes large number of clients.
 * MUSE is server for distributed system. It supports cluster and replication methods. Cluster provides a way to automatically share across multiple MUSE server. Replication of each server nodes help to handle when one of the node fail-over.
 
-### Overall Architecture
-
-
-
 ### How to compile?
 
 MUSE uses thread and mutex library in C++11. Therefore, it must be complied and used where such library's are available.
@@ -54,7 +50,7 @@ To build cluster, first, you must run the servers to include in server. For inst
 
 Configuration text file should be written in given forms:
 
-    cluster [CLUSTER NUMBER]
+    cluster [NUMBER of CLUSTER]
     [IP ADDRESS 1] [PORT NUMBER 1]
     [IP ADDRESS 2] [PORT NUMBER 3]
     ...
@@ -73,7 +69,7 @@ Building replication is similar to building cluster. You must run the servers to
 
 Like cluster, configuration text file should be written in given forms:
 
-    replicanumber [CLUSTER NUMBER]
+    replicanumber [NUMBER of REPLICA]
     replica [IP ADDRESS 1] [PORT NUMBER 1]
     replica [IP ADDRESS 2] [PORT NUMBER 3]
     ...
@@ -85,10 +81,41 @@ For example, if you want to make a replication with 3 server nodes:
     replica 127.0.0.1 5002
     replica 127.0.0.1 5003
 
-In order to make a distributed system with both cluster and replication, you must build replication first and then cluster:
+In order to make a distributed system with both cluster and replication, please use muse-dist. It automatically connects the server in fair way in order to give fair network burden.
 
-    $ ./muse-replica [CONFIGURATION TXT]
-    $ ./muse-cluster [CONFIGURATION TXT]
+    $ ./muse-dist [CONFIGURATION TXT]
+
+It also requires a configuration text file in a given form:
+
+    totalcluster [TOTAL CLUSTER NUMBER]
+    replicanumber [NUMBER of REPLICA]
+    replica [IP ADDRESS 1_1] [PORT NUMBER 1_1]
+    replica [IP ADDRESS 1_2] [PORT NUMBER 1_2]
+    ...
+    replicanumber [NUMBER of REPLICA]
+    replica [IP ADDRESS 2_1] [PORT NUMBER 2_1]
+    replica [IP ADDRESS 2_2] [PORT NUMBER 2_2]
+    replica [IP ADDRESS 2_3] [PORT NUMBER 2_3]
+    ...
+
+For example, if you want to make a distributed system with 3 clusters and each node has 2 replicas:
+
+    totalcluster 3
+    replicanumber 2
+    replica 127.0.0.1 5050
+    replica 127.0.0.1 5051
+    replicanumber 2
+    replica 127.0.0.1 5052
+    replica 127.0.0.1 5053
+    replicanumber 2
+    replica 127.0.0.1 5052
+    replica 127.0.0.1 5053
+
+You can choose any number of clusters and any number of replicas for each node.
+
+To recover the server with text log file, you can run muse-restore:
+
+    $ ./muse-restore [IP ADDRESS] [PORT NUMBER] [AUTHORITY LEVEL] [LOG TXT]
 
 ### D2 CAMPUS FEST mini
 
