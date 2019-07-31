@@ -1,7 +1,0 @@
-totalcluster 2
-replicanumber 2
-replica 127.0.0.1 5050
-replica 127.0.0.1 5051
-replicanumber 2
-replica 127.0.0.1 5052
-replica 127.0.0.1 5053
