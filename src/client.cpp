@@ -77,13 +77,18 @@ int get_replica_info(char* buf, std::string ip, int p){
     }
 
     temp = buf;
-    std::cout << "replica are total " << temp << std::endl;
+    
     trimmed_temp = kvstore::trim(temp);
     kvstore::split(trimmed_temp, ' ', arguments, arg_num);
     replica_num = atoi(arguments[0].c_str());
 
     if(replica_num == 0){
+        std::cout << "There is no replica in this node, Single Server!" << std::endl;
+        std::cout << "------------CLIENT OPEN------------" << std::endl;
         return 1;
+    }
+    else{
+        std::cout << "Total number of replica is " << replica_num << std::endl;
     }
 
     replica_ip = new std::string [replica_num];
@@ -127,6 +132,8 @@ int get_replica_info(char* buf, std::string ip, int p){
     for(int i = 0; i < replica_num; i++){
         std::cout << i << "th info: ip is "<< replica_ip[i] << ", port is " << replica_port[i] << std::endl;
     }
+    
+    std::cout << "------------CLIENT OPEN------------" << std::endl;
     return 1;
 }
 
