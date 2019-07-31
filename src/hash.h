@@ -42,7 +42,7 @@ This is main class of hash structure
 #include "hashnode.h"
 #include "encrypt.h"
 
-#define TOTAL_SLOT_NUM 99
+#define TOTAL_SLOT_NUM 10007
 
 namespace hash{
 

@@ -27,7 +27,7 @@ This class helps to handle commands
 #include "command.h"
 #include "linkedlist.h"
 
-//encoding data to value
+//encode data to value
 inline kvstore::value command::data_encode(std::string data, kvstore::dtype data_type)
 {
     kvstore::value encoded;
@@ -94,12 +94,12 @@ inline kvstore::value command::data_encode(std::string data, kvstore::dtype data
     }
     default:
     {
-        return kvstore::value{};
+        return encoded;
     }
     }
 }
 
-//decoding value to data with print format
+//decode value to data
 inline std::string command::data_decode(kvstore::value v)
 {
     switch(v.data_dtype)
@@ -156,14 +156,14 @@ inline std::string command::COMMAND::get(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     if(auth < node->get_authr())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     return data_decode(node->get_v());
 }
@@ -176,7 +176,7 @@ inline std::string command::COMMAND::make(hash::Hash* h)
     int tr;
     hashnode::hashNode* node = h->find_node(k, &tr);
     if(node != NULL && auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     switch(num_args)
     {
@@ -189,9 +189,9 @@ inline std::string command::COMMAND::make(hash::Hash* h)
     {
         std::pair<bool, int> temp = kvstore::strtoint(args[3]);
         if(!temp.first || temp.second < 0)
-            return "ERROR09 : INVALID AUTH";
+            return "ERROR : INVALID AUTH";
         if(auth < temp.second)
-            return "ERROR11 : NOT ENOUGH PERMISSION";
+            return "ERROR : NOT ENOUGH PERMISSION";
 
         h->set(k, v, temp.second, auth);
         return CONFIRM_MSG;
@@ -201,22 +201,22 @@ inline std::string command::COMMAND::make(hash::Hash* h)
         std::pair<bool, int> temp1 = kvstore::strtoint(args[3]);
         std::pair<bool, int> temp2 = kvstore::strtoint(args[4]);
         if(!temp1.first || temp1.second < 0)
-            return "ERROR09 : INVALID AUTH";
+            return "ERROR : INVALID AUTH";
         if(!temp2.first || temp2.second < 0)
-            return "ERROR09 : INVALID AUTH";
+            return "ERROR : INVALID AUTH";
         if(auth < temp1.second)
-            return "ERROR11 : NOT ENOUGH PERMISSION";
+            return "ERROR : NOT ENOUGH PERMISSION";
         if(auth < temp2.second)
-            return "ERROR11 : NOT ENOUGH PERMISSION";
+            return "ERROR : NOT ENOUGH PERMISSION";
         if(temp1.second > temp2.second)
-            return "ERROR09 : INVALID AUTH";
+            return "ERROR : INVALID AUTH";
 
         h->set(k, v, temp1.second, temp2.second);
         return CONFIRM_MSG;
     }
     default:
     {
-        return "ERORR!!!";
+        exit(1);
     }
     }
 }
@@ -228,9 +228,9 @@ inline std::string command::COMMAND::del(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     h->hash::Hash::del(k);
     return CONFIRM_MSG;
@@ -269,7 +269,7 @@ inline std::string command::COMMAND::lmake(hash::Hash* h)
     int tr;
     hashnode::hashNode* node = h->find_node(k, &tr);
     if(node != NULL && auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     std::string str = std::string(args[2]);
     for(int i = 3; i < num_args; i++)
@@ -290,20 +290,24 @@ inline std::string command::COMMAND::lpush(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     for(int i = 2; i < num_args; i++)
         ((linkedlist::List *)(v.data_addr))->push_front(args[i]);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -315,20 +319,24 @@ inline std::string command::COMMAND::rpush(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     for(int i = 2; i < num_args; i++)
         ((linkedlist::List*)(v.data_addr))->push_back(args[i]);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -340,22 +348,27 @@ inline std::string command::COMMAND::lpop(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return"ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     linkedlist::List* l = (linkedlist::List*)(v.data_addr);
     if(l->is_empty())
-        return "ERROR04 : EMPTY LIST";
+        return "ERROR : EMPTY LIST";
 
-    return l->pop_front();
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
+    std::string pop = l->pop_front();
+    mut->unlock();
+
+    return pop;
 }
 
 inline std::string command::COMMAND::rpop(hash::Hash* h)
@@ -366,22 +379,27 @@ inline std::string command::COMMAND::rpop(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     linkedlist::List* l = (linkedlist::List*)(v.data_addr);
     if(l->is_empty())
-        return "ERROR04 : EMPTY LIST";
+        return "ERROR : EMPTY LIST";
 
-    return l->pop_back();
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
+    std::string pop = l->pop_back();
+    mut->unlock();
+
+    return pop;
 }
 
 inline std::string command::COMMAND::lget(hash::Hash* h)
@@ -392,23 +410,23 @@ inline std::string command::COMMAND::lget(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authr())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     linkedlist::List* l = (linkedlist::List*)(v.data_addr);
     if(l->is_empty())
-        return "ERROR04 : EMPTY LIST";
+        return "ERROR : EMPTY LIST";
     std::pair<bool, int> temp = kvstore::strtoint(args[2]);
     if(!temp.first)
-        return "ERROR07 : INVALID INDEX";
+        return "ERROR : INVALID INDEX";
 
     return l->get(temp.second);
 }
@@ -421,23 +439,23 @@ inline std::string command::COMMAND::lset(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     linkedlist::List* l = (linkedlist::List*)(v.data_addr);
     if(l->is_empty())
-        return "ERROR04 : EMPTY LIST";
+        return "ERROR : EMPTY LIST";
     std::pair<bool, int> temp = kvstore::strtoint(args[2]);
     if(!temp.first)
-        return "ERROR07 : INVALID INDEX";
+        return "ERROR : INVALID INDEX";
 
     l->set(temp.second, args[3]);
     return CONFIRM_MSG;
@@ -451,25 +469,29 @@ inline std::string command::COMMAND::lerase(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     linkedlist::List* l = (linkedlist::List*)(v.data_addr);
     if(l->is_empty())
-        return "ERROR04 : EMPTY LIST";
+        return "ERROR : EMPTY LIST";
     std::pair<bool, int> temp = kvstore::strtoint(args[2]);
     if(!temp.first)
-        return "ERROR07 : INVALID INDEX";
+        return "ERROR : INVALID INDEX";
 
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     l->del(temp.second);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -480,7 +502,7 @@ inline std::string command::COMMAND::smake(hash::Hash* h)
     int tr;
     hashnode::hashNode* node = h->find_node(k, &tr);
     if(node != NULL && auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
 
     std::string str = std::string(args[2]);
@@ -503,21 +525,26 @@ inline std::string command::COMMAND::spush(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Set)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     hashset::Hashset* s = (hashset::Hashset*)(v.data_addr);
+
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     for(int i = 2; i < num_args; i++)
         s->push(args[i]);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -529,22 +556,27 @@ inline std::string command::COMMAND::spop(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Set)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     hashset::Hashset* s = (hashset::Hashset*)(v.data_addr);
     if(s->is_empty())
-        return "ERROR04 : EMPTY LIST";
+        return "ERROR : EMPTY LIST";
 
-    return s->pop();
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
+    std::string pop = s->pop();
+    mut->unlock();
+
+    return pop;
 }
 
 inline std::string command::COMMAND::serase(hash::Hash* h)
@@ -555,22 +587,28 @@ inline std::string command::COMMAND::serase(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Set)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     hashset::Hashset* s = (hashset::Hashset*)(v.data_addr);
     if(s->is_empty())
-        return "ERROR04 : EMPTY LIST";
-    if(!s->del(args[2]))
-        return "ERROR02 : NO SUCH ELEMENT (" + args[2] + ")";
+        return "ERROR : EMPTY LIST";
+
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
+    bool success = s->del(args[2]);
+    mut->unlock();
+
+    if(!success)
+        return "ERROR : NO SUCH ELEMENT (" + args[2] + ")";
 
     return CONFIRM_MSG;
 }
@@ -583,17 +621,17 @@ inline std::string command::COMMAND::sort(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::List && v.data_dtype != kvstore::Set)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authr())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     std::string str;
     if(v.data_dtype == kvstore::List)
@@ -616,14 +654,14 @@ inline std::string command::COMMAND::sort(hash::Hash* h)
 inline std::string command::COMMAND::hmake(hash::Hash *h)
 {
     if((num_args % 2) != 0)
-        return "ERROR08 : INVALID COMMAND";
+        return "ERROR : INVALID COMMAND";
 
     kvstore::key k = args[1];
 
     int tr;
     hashnode::hashNode* node = h->find_node(k, &tr);
     if(node != NULL && auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     // merge function
     std::string str = std::string(args[2]);
@@ -644,25 +682,29 @@ inline std::string command::COMMAND::hpush(hash::Hash *h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Hashmap)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     ((hashmap::Hashmap*)(v.data_addr))->set_fv(args[2], args[3]);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
 inline std::string command::COMMAND::hget(hash::Hash *h)
 {
-        kvstore::key k = args[1];
+    kvstore::key k = args[1];
     std::string f = args[2];
     int index = 0;
     time_t curr_time = time(NULL);
@@ -670,25 +712,25 @@ inline std::string command::COMMAND::hget(hash::Hash *h)
     hashnode::hashNode* node = h->hash::Hash::find_node(k,&index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Hashmap)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authr())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     hashmap::Hashmap* h_map_ = (hashmap::Hashmap*)(v.data_addr);
     if(h_map_->hashmap::Hashmap::is_empty())
-        return "ERROR05 : EMPTY HASHMAP";
+        return "ERROR : EMPTY HASHMAP";
 
     std::string result = h_map_->hashmap::Hashmap::get_v(f);
     if(result == "NULL")
-        return "ERROR03 : NO SUCH FIELD (" + f + ")";
+        return "ERROR : NO SUCH FIELD (" + f + ")";
     else
         return result;
 }
@@ -702,21 +744,21 @@ inline std::string command::COMMAND::hfields(hash::Hash *h)
     hashnode::hashNode* node = h->hash::Hash::find_node(k,&index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Hashmap)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authr())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     hashmap::Hashmap* h_map_ = (hashmap::Hashmap*)(v.data_addr);
     if(h_map_->hashmap::Hashmap::is_empty())
-        return "ERROR05 : EMPTY HASHMAP";
+        return "ERROR : EMPTY HASHMAP";
     else
         return h_map_->hashmap::Hashmap::fields();
 
@@ -731,21 +773,21 @@ inline std::string command::COMMAND::hvals(hash::Hash *h)
     hashnode::hashNode* node = h->hash::Hash::find_node(k,&index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Hashmap)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authr())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     hashmap::Hashmap* h_map_ = (hashmap::Hashmap*)(v.data_addr);
     if(h_map_->hashmap::Hashmap::is_empty())
-        return "ERROR05 : EMPTY HASHMAP";
+        return "ERROR : EMPTY HASHMAP";
     else
         return h_map_->hashmap::Hashmap::values();
 }
@@ -760,28 +802,32 @@ inline std::string command::COMMAND::herase(hash::Hash *h)
     hashnode::hashNode* node = h->hash::Hash::find_node(k,&index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     kvstore::value v = node->get_v();
     if(v.data_dtype != kvstore::Hashmap)
-        return "ERROR06 : INVALID TYPE";
+        return "ERROR : INVALID TYPE";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
     hashmap::Hashmap* h_map_ = (hashmap::Hashmap*)(v.data_addr);
     if(h_map_->hashmap::Hashmap::is_empty())
-        return "ERROR05 : EMPTY HASHMAP";
+        return "ERROR : EMPTY HASHMAP";
 
     hashmap::hashmapNode* h_map_node = h_map_->find_hashmapNode(f, &index);
     if(h_map_node == NULL)
-        return "ERROR03 : NO SUCH FIELD (" + f + ")";
+        return "ERROR : NO SUCH FIELD (" + f + ")";
     else
     {
+        std::mutex* mut = node->get_thrd();
+        mut->lock();
         h_map_->hashmap::Hashmap::del_fv(f);
+        mut->unlock();
+
         return CONFIRM_MSG;
     }
 }
@@ -793,16 +839,20 @@ inline std::string command::COMMAND::authr(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     std::pair<bool, int> temp = kvstore::strtoint(args[2]);
     if(!temp.first || temp.second < 0)
-        return "ERROR09 : INVALID AUTH";
+        return "ERROR : INVALID AUTH";
     if(auth < temp.second)
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     node->set_authr(temp.second);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -813,16 +863,20 @@ inline std::string command::COMMAND::authw(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     std::pair<bool, int> temp = kvstore::strtoint(args[2]);
     if(!temp.first || temp.second < 0)
-        return "ERROR09 : INVALID AUTH";
+        return "ERROR : INVALID AUTH";
     if(auth < temp.second)
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
 
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     node->set_authw(temp.second);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -831,7 +885,7 @@ inline std::string command::COMMAND::expire(hash::Hash* h)
     kvstore::key k = args[1];
     std::pair<bool, int> temp = kvstore::strtoint(args[2]);
     if(!temp.first)
-        return "ERROR10 : INVALID TIME";
+        return "ERROR : INVALID TIME";
     int time_ex = temp.second;
 
     int index = 0;
@@ -839,15 +893,20 @@ inline std::string command::COMMAND::expire(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
     if(auth < node->get_authw())
-        return "ERROR11 : NOT ENOUGH PERMISSION";
+        return "ERROR : NOT ENOUGH PERMISSION";
+
+    std::mutex* mut = node->get_thrd();
+    mut->lock();
     node->set_ttl(time_ex);
+    mut->unlock();
+
     return CONFIRM_MSG;
 }
 
@@ -861,22 +920,25 @@ inline std::string command::COMMAND::get_ttl(hash::Hash* h)
     hashnode::hashNode* node = h->find_node(k, &index);
 
     if(node == NULL)
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     if(node->is_expired(curr_time))
     {
         h->hash::Hash::del(k);
-        return "ERROR01 : NO SUCH KEY (" + k + ")";
+        return "ERROR : NO SUCH KEY (" + k + ")";
     }
+    if(auth < node->get_authr())
+        return "ERROR : NOT ENOUGH PERMISSION";
     else
         return std::to_string(node->get_ttl(curr_time));
 }
 
+// NEED TO SEE
 inline std::string command::COMMAND::save(hash::Hash* h)
 {
     if(h->save())
         return CONFIRM_MSG;
     else
-        return "ERROR12 : NO FILE";
+        return "ERROR : NO FILE";
 }
 
 inline std::string command::COMMAND::read(hash::Hash* h)
@@ -884,7 +946,7 @@ inline std::string command::COMMAND::read(hash::Hash* h)
     if(h->read(args[1]))
         return CONFIRM_MSG;
     else
-        return "ERROR13 : FAIL TO READ FILE";
+        return "ERROR : FAIL TO READ FILE";
 }
 
 #endif

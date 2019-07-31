@@ -84,18 +84,18 @@ int main(int argc, char ** argv){
             addr_list[line_num-1] = "clust " + lr + " " + std::to_string(start) + " " + std::to_string(TOTAL_SLOT_NUM - 1);
             my_list[line_num-1] = "myinfo " + lr + " " + std::to_string(start) + " " + std::to_string(TOTAL_SLOT_NUM - 1);
         }
-        else{            
+        else{
             addr_list[line_num-1] = "clust " + lr + " " + std::to_string(start) + " " + std::to_string(start + each_slot - 1);
             my_list[line_num-1] = "myinfo "  + lr + " " + std::to_string(start) + " " + std::to_string(start + each_slot - 1);
             start = start + each_slot;
-            line_num++;            
+            line_num++;
         }
     }
 
     for(int i = 0; i < cluster_num; i++){
         std::cout <<addr_list[i] << std::endl;
     }
-    
+
     std::cout << "///////////////////////////////////" << std::endl << std::endl;
 
     //////////////////// Cluster Init //////////////////////
@@ -123,7 +123,7 @@ int main(int argc, char ** argv){
         std::cout << "ip address is "<< tok << std::endl;
         tok = strtok(NULL, " ");
         server_addr.sin_port = htons(atoi(tok));
-        std::cout << "port number is " << tok << std::endl;        
+        std::cout << "port number is " << tok << std::endl;
 
         if(connect(s, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1){
             std::cerr << "ERROR : CAN'T CONNECT FOR CLUSTER BUILDING!" << std::endl;
@@ -140,7 +140,7 @@ int main(int argc, char ** argv){
                 std::cout << my_list[j] << std::endl;
                 recv(s, buf, 1024, 0);
                 std::cout << j << "th cluster sending..." <<  buf <<std::endl;
-                if(buf == "cluster fail"){
+                if(strcmp(buf,"cluster fail")==0){
                     exit(1);
                 }
             }
@@ -150,10 +150,10 @@ int main(int argc, char ** argv){
                 std::cout << addr_list[j] << std::endl;
                 recv(s, buf, 1024, 0);
                 std::cout << j << "th cluster sending..." <<  buf <<std::endl;
-                if(buf == "cluster fail"){
+                if(strcmp(buf,"cluster fail")==0){
                     exit(1);
                 }
-            } 
+            }
         }
 
         send(s, quit.data(), quit.size(), 0);

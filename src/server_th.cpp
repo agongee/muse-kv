@@ -165,7 +165,9 @@ void* server_th::scan_and_send(struct socket_st* ss, std::string com){
 
     std::cout << "Command result is // " << com_result << " //" << std::endl;
 
+
     // keys and save command needs to get info from other nodes in cluster
+/*
     trimmed_com = kvstore::trim(com);
     if(trimmed_com.substr(0, 4) == "keys"){
         com_result += all_keys(ss);
@@ -173,7 +175,7 @@ void* server_th::scan_and_send(struct socket_st* ss, std::string com){
     else if(trimmed_com.substr(0, 4) == "save"){
         all_save();
     }
-
+*/
     // special command for setup
 
     // server get client's authority information and send replica number
@@ -257,7 +259,7 @@ void* server_th::scan_and_send(struct socket_st* ss, std::string com){
             log_append_th.detach();
         }
 
-        if(ss->auto_send_yes && val == command::Write){
+        if(ss->auto_send_yes && val == command::Write && replica_num != 0){
             std::thread auto_send_th (server_th::auto_send, com);
             auto_send_th.detach();
         }
