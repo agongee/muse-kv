@@ -1,5 +1,5 @@
 # MUSE
-MUSE: MUltithreading SEcure In-Memory Key-Value Store
+MUSE: MUltithreaded SEcure In-Memory Key-Value Store
 
 ### What is MUSE?
 
